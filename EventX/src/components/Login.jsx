@@ -88,6 +88,7 @@ export default function Login() {
           </div>
         </div>
       </div>
+      {/* Final div */}
     </div>
   );
 }
