@@ -75,13 +75,13 @@ export default function Login() {
           <div className="mt-6">
             <p className="text-orange-400 font-semibold mb-2">Continue with</p>
             <div className="flex space-x-4">
-              <button className="bg-white p-2 rounded-full text-black cursor-pointer hover:text-gray-700">
+              <button className="bg-white p-2 rounded-full text-black cursor-pointer hover:text-gray-500">
                 <FaEnvelope />
               </button>
-              <button className="bg-white p-2 rounded-full text-black cursor-pointer hover:text-gray-700">
+              <button className="bg-white p-2 rounded-full text-black cursor-pointer hover:text-gray-500">
                 <FaFacebook />
               </button>
-              <button className="p-2 rounded-full text-black bg-white cursor-pointer hover:text-gray-700">
+              <button className="p-2 rounded-full text-black bg-white cursor-pointer hover:text-gray-500">
                 <FaTwitter />
               </button>
             </div>
