@@ -189,7 +189,7 @@ export default function Login() {
         {/* Divider */}
         <div className="w-px bg-gray-300 mx-10 " />
         {/* Right Section */}
-        <div className="w-1/2 space-y-6 space-x-3">
+        <div className="w-1/2 space-y-10 space-x-5">
           {/* Google signup flow */}
           {googleStep === 1 && (
             <form onSubmit={handleGoogleUsername}>
@@ -219,7 +219,7 @@ export default function Login() {
               <select
                 value={role}
                 onChange={(e) => setRole(e.target.value)}
-                className="w-full bg-white/90 text-black px-4 py-2 rounded-md focus:outline-none cursor-pointer font-bold"
+                className="w-full h-13 bg-white/90 text-black px-4 py-2 rounded-md focus:outline-none cursor-pointer font-bold mb-10"
               >
                 <option>SELECT ROLE</option>
                 <option>Organizer</option>
@@ -228,14 +228,14 @@ export default function Login() {
               <input
                 type="text"
                 placeholder="Email or Username"
-                className="w-full bg-white/90 text-black px-4 py-2 rounded-md focus:outline-none"
+                className="w-full bg-white/90 text-black px-4 py-2 rounded-md focus:outline-none mb-6"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
               />
               <input
                 type="password"
                 placeholder="Password"
-                className="w-full bg-white/90 text-black px-4 py-2 rounded-md focus:outline-none"
+                className="w-full bg-white/90 text-black px-4 py-2 rounded-md focus:outline-none mb-6"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
