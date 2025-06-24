@@ -1,0 +1,19 @@
+ /* const handleLogin = async (e) => {
+    e.preventDefault();
+
+    //for firebase authentication
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user=userCredential.user;
+
+      console.log("Logged in user:", user.email, "with role:", role);
+      alert("Welcome user ${user.email}");
+    } catch (error) {
+      alert(error.message);
+      console.error("Login error:", error);
+    }
+
+    console.log("Logging in with:", { email, password, role });
+
+  };*/

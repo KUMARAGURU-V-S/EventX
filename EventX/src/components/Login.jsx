@@ -1,17 +1,36 @@
 import { useState } from "react";
 import { FaEnvelope, FaFacebook, FaTwitter } from "react-icons/fa";
+import {signInWithEmailAndPassword} from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import {auth} from "../firebase";
+
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("SELECT ROLE");
 
-  const handleLogin = (e) => {
+ const handleLogin = async (e) => {
     e.preventDefault();
+
+    //for firebase authentication
+
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user=userCredential.user;
+
+      console.log("Logged in user:", user.email, "with role:", role);
+      alert(`Welcome user ${user.email}`);
+    } catch (error) {
+      alert(error.message);
+      console.error("Login error:", error);
+    }
+
     console.log("Logging in with:", { email, password, role });
-    alert("Login clicked!");
+
   };
 
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-800 to-purple-500">
       <div className="bg-transparent w-full max-w-4xl p-8 flex rounded-lg text-white">

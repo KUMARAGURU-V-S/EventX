@@ -7,9 +7,7 @@ function App() {
   return (
     <>
       <Login />
-      <OrganizerDashboard />
-      <Signup />
-      <StudentDashboard />
+      
     </>
   );
 }
