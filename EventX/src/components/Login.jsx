@@ -2,6 +2,8 @@ import { useState } from "react";
 import { FaEnvelope, FaFacebook, FaTwitter } from "react-icons/fa";
 import {signInWithEmailAndPassword} from "firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
+
 import {auth} from "../firebase";
 
 
@@ -9,28 +11,43 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("SELECT ROLE");
+  const [isLogin, setIsLogin] = useState(true); // Toggle between login and signup
 
- const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (email, password, role) => {
+  try {
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    console.log("Logged in user:", user.email, "with role:", role);
+    alert(`Welcome user ${user.email}`);
+  } catch (error) {
+    console.error("Login error:", error);
+    alert(error.message);
+  }
+};
 
-    //for firebase authentication
+ const handleSignup = async (email, password, role) => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    console.log("Signed up user:", user.email, "with role:", role);
+    alert(`Account created for ${user.email}`);
+  } catch (error) {
+    console.error("Signup error:", error);
+    alert(error.message);
+  }
+};
 
-    try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user=userCredential.user;
-
-      console.log("Logged in user:", user.email, "with role:", role);
-      alert(`Welcome user ${user.email}`);
-    } catch (error) {
-      alert(error.message);
-      console.error("Login error:", error);
-    }
-
-    console.log("Logging in with:", { email, password, role });
-
-  };
-
-  
+ const handleGoogleLogin = async () => {
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+    console.log("Google user:", user.email);
+    alert(`Signed in with Google: ${user.email}`);
+  } catch (error) {
+    console.error("Google login error:", error);
+    alert(error.message);
+  }
+};
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-800 to-purple-500">
       <div className="bg-transparent w-full max-w-4xl p-8 flex rounded-lg text-white">
@@ -47,6 +64,9 @@ export default function Login() {
 
         {/*  Right Section - login credentials*/}
         <div className="w-1/2 space-y-6 space-x-3">
+         
+          <form 
+          onSubmit={isLogin ? handleLogin : handleSignup}>
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
@@ -74,20 +94,25 @@ export default function Login() {
           />
 
           {/*  Login Button */}
-          <button
-            onClick={handleLogin}
+          <button 
+          type="submit"
             className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded-md transition duration-200 cursor-pointer"
           >
-            Login
+            {isLogin ? "Login":"Sign UP"}
           </button>
+          </form>
 
           <div className="flex justify-between text-sm text-white mt-2">
             <a href="#" className="hover:underline cursor-pointer">
               Forgot password?
             </a>
-            <a href="#" className="hover:underline cursor-pointer">
-              New ? Sign up
-            </a>
+            <button
+             className="hover:underline cursor-pointer"
+             onClick={()=>setIsLogin(!isLogin)}
+             type="button"
+             >
+              {isLogin ? "New? Sign up" : "Already have an account? Login"}
+            </button>
           </div>
 
           {/* Continue via other choices */}
