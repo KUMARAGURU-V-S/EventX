@@ -8,8 +8,10 @@ import {
   updateDoc,
   getDoc,
   getDocs,
+  setDoc,
 } from "firebase/firestore";
 import { auth } from "../firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 const db = getFirestore();
 
@@ -62,11 +64,19 @@ export default function OrganizerDashboard() {
         eventsList = Array.isArray(data.events)
           ? [...data.events, eventRef.id]
           : [eventRef.id];
+        await updateDoc(orgRef, {
+          events_created: eventsCreated,
+          events: eventsList,
+        });
+      } else {
+        // Create the document if it doesn't exist
+        await setDoc(orgRef, {
+          events_created: eventsCreated,
+          events: eventsList,
+          email: auth.currentUser?.email || "unknown",
+          role: "Organizer",
+        });
       }
-      await updateDoc(orgRef, {
-        events_created: eventsCreated,
-        events: eventsList,
-      });
 
       alert("Event created!");
       setShowPopup(false);
@@ -82,6 +92,10 @@ export default function OrganizerDashboard() {
         tags: "",
         banner: "",
       });
+
+      // Refetch events after creation
+      fetchMyEvents();
+
     } catch (err) {
       alert("Error creating event: " + err.message);
     }
@@ -99,34 +113,47 @@ export default function OrganizerDashboard() {
     return null;
   }
 
-  // Fetch my events on mount
-  useEffect(() => {
-    async function fetchMyEvents() {
-      if (!auth.currentUser?.email) return;
-      // Get current username
-      const currentUsername = await getCurrentUsername();
-      if (!currentUsername) return;
-      // Get organizer doc
-      const orgRef = doc(db, "usernames", currentUsername);
-      const orgSnap = await getDoc(orgRef);
-      if (!orgSnap.exists()) return;
-      const eventsList = orgSnap.data().events || [];
-      if (eventsList.length === 0) {
-        setMyEvents([]);
-        return;
-      }
-      // Fetch event docs by ID
-      const eventsCol = collection(db, "events");
-      const allEventsSnap = await getDocs(eventsCol);
-      const myEventsArr = [];
-      allEventsSnap.forEach((eventDoc) => {
-        if (eventsList.includes(eventDoc.id)) {
-          myEventsArr.push({ id: eventDoc.id, ...eventDoc.data() });
-        }
-      });
-      setMyEvents(myEventsArr);
+  // Fetch my events
+  async function fetchMyEvents() {
+    if (!auth.currentUser?.email) return;
+    // Get current username
+    const currentUsername = await getCurrentUsername();
+    if (!currentUsername) return;
+    // Get organizer doc
+    const orgRef = doc(db, "usernames", currentUsername);
+    const orgSnap = await getDoc(orgRef);
+    if (!orgSnap.exists()) {
+      setMyEvents([]);
+      return;
     }
-    fetchMyEvents();
+    const eventsList = orgSnap.data().events || [];
+    if (eventsList.length === 0) {
+      setMyEvents([]);
+      return;
+    }
+    // Fetch event docs by ID
+    const eventsCol = collection(db, "events");
+    const allEventsSnap = await getDocs(eventsCol);
+    const myEventsArr = [];
+    allEventsSnap.forEach((eventDoc) => {
+      if (eventsList.includes(eventDoc.id)) {
+        myEventsArr.push({ id: eventDoc.id, ...eventDoc.data() });
+      }
+    });
+    setMyEvents(myEventsArr);
+  }
+
+  // useEffect to load events on mount and when popup closes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchMyEvents();
+      } else {
+        setMyEvents([]);
+      }
+    });
+    return () => unsubscribe();
+    // eslint-disable-next-line
   }, [showPopup]);
 
   return (
@@ -151,6 +178,15 @@ export default function OrganizerDashboard() {
           Add a new event
         </button>
 
+        {/*Refresh  for saftety button*/}
+ {/*       <div
+          className="text-4xl text-gray-700 cursor-pointer hover:text-gray-800"
+          onClick={fetchMyEvents}
+          title="Refresh"
+        >
+          &#x21bb; 
+        </div>
+*/}
         {/* Profile Icon */}
         <div className="text-4xl text-gray-700 cursor-pointer hover:text-gray-800">
           <FaUserCircle />
@@ -264,10 +300,13 @@ export default function OrganizerDashboard() {
           </form>
         </div>
       )}
-
+      
       {/* Events Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-        {myEvents.length === 0 ? (
+        {
+        
+        myEvents.length === 0 ? (
+
           <div className="col-span-full text-center text-gray-500">
             No events created yet.
           </div>
