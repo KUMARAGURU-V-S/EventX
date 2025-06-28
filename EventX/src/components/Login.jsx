@@ -58,6 +58,14 @@ export default function Login() {
       if (userRole !== role) return alert("Role does not match!");
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       alert(`Welcome ${userCredential.user.email}`);
+
+
+      
+   auth.currentUser.getIdToken(/* forceRefresh */ true).then((idToken) => {
+  console.log("Bearer token:", idToken);
+    });
+
+
       // Redirect based on role
       if (role === "Organizer") {
         navigate("/organiser-dashboard");
