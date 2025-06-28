@@ -7,6 +7,9 @@ const db = getFirestore();
 export default function StudentDashboard() {
   const [events, setEvents] = useState([]);
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [filterLevel, setFilterLevel] = useState("ALL");
+  const [filterFormat, setFilterFormat] = useState("ALL");
   const EVENTS_PER_PAGE = 5;
 
   useEffect(() => {
@@ -22,26 +25,73 @@ export default function StudentDashboard() {
     fetchEvents();
   }, []);
 
+  // Filter and search logic
+  const filteredEvents = events.filter((event) => {
+    // Search by title, tags, or hosted_by
+    const keyword = search.trim().toLowerCase();
+    const matchesSearch =
+      !keyword ||
+      event.title?.toLowerCase().includes(keyword) ||
+      event.hosted_by?.toLowerCase().includes(keyword) ||
+      (Array.isArray(event.tags) &&
+        event.tags.join(" ").toLowerCase().includes(keyword));
+    // Filter by level
+    const matchesLevel =
+      filterLevel === "ALL" || event.level === filterLevel;
+    // Filter by format
+    const matchesFormat =
+      filterFormat === "ALL" || event.format === filterFormat;
+    return matchesSearch && matchesLevel && matchesFormat;
+  });
+
   // Pagination logic
-  const totalPages = Math.ceil(events.length / EVENTS_PER_PAGE);
-  const paginatedEvents = events.slice(
+  const totalPages = Math.ceil(filteredEvents.length / EVENTS_PER_PAGE);
+  const paginatedEvents = filteredEvents.slice(
     (page - 1) * EVENTS_PER_PAGE,
     page * EVENTS_PER_PAGE
   );
 
+  // Reset to first page when filters/search change
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterLevel, filterFormat]);
+
   return (
     <div className="min-h-screen bg-gray-50 px-6 py-6 font-poppins">
-      {/* Top Row: Search | View Registered Events | Profile */}
+      {/* Top Row: Search | Filters | View Registered Events | Profile */}
       <div className="flex items-center justify-between gap-x-6 max-w-4xl mx-auto mb-10">
         {/* Search Bar */}
         <div className="flex items-center flex-grow border border-gray-300 rounded-md px-4 py-2 bg-white shadow-sm">
           <input
             type="text"
-            placeholder="Enter an event to search"
+            placeholder="Search events by keyword, tag, or host"
             className="flex-grow outline-none text-gray-700 placeholder-gray-500 text-sm"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
           <FaSearch className="ml-2 text-lg text-gray-600" />
         </div>
+
+        {/* Filters */}
+        <select
+          value={filterLevel}
+          onChange={(e) => setFilterLevel(e.target.value)}
+          className="bg-white text-black px-2 py-1 rounded-md text-sm font-semibold"
+        >
+          <option value="ALL">All Levels</option>
+          <option value="beginner">Beginner</option>
+          <option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+        <select
+          value={filterFormat}
+          onChange={(e) => setFilterFormat(e.target.value)}
+          className="bg-white text-black px-2 py-1 rounded-md text-sm font-semibold"
+        >
+          <option value="ALL">All Formats</option>
+          <option value="online">Online</option>
+          <option value="offline">Offline</option>
+        </select>
 
         {/* View Registered Events Button */}
         <button className="bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-md hover:bg-blue-700 transition-all shadow-sm whitespace-nowrap cursor-pointer">

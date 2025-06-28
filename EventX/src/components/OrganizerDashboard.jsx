@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 import { auth } from "../firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import OrganizerEventSearch from "./OrganizerEventSearch";
 
 const db = getFirestore();
 
@@ -30,6 +31,9 @@ export default function OrganizerDashboard() {
     banner: "",
   });
   const [myEvents, setMyEvents] = useState([]);
+  const [search, setSearch] = useState("");
+  const [filterLevel, setFilterLevel] = useState("ALL");
+  const [filterFormat, setFilterFormat] = useState("ALL");
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -143,6 +147,20 @@ export default function OrganizerDashboard() {
     setMyEvents(myEventsArr);
   }
 
+  // Filter and search logic for organizer's events
+  const filteredMyEvents = myEvents.filter((event) => {
+    const keyword = search.trim().toLowerCase();
+    const matchesSearch =
+      !keyword ||
+      event.title?.toLowerCase().includes(keyword) ||
+      event.hosted_by?.toLowerCase().includes(keyword) ||
+      (Array.isArray(event.tags) &&
+        event.tags.join(" ").toLowerCase().includes(keyword));
+    const matchesLevel = filterLevel === "ALL" || event.level === filterLevel;
+    const matchesFormat = filterFormat === "ALL" || event.format === filterFormat;
+    return matchesSearch && matchesLevel && matchesFormat;
+  });
+
   // useEffect to load events on mount and when popup closes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -160,16 +178,15 @@ export default function OrganizerDashboard() {
     <div className="min-h-screen bg-gray-50 px-6 py-6 font-poppins">
       {/* Top Row: Search | Add Event | Profile */}
       <div className="flex items-center justify-between gap-x-6 max-w-4xl mx-auto mb-10">
-        {/* Search Bar */}
-        <div className="flex items-center flex-grow border border-gray-300 rounded-md px-4 py-2 bg-white shadow-sm">
-          <input
-            type="text"
-            placeholder="Enter an event to search"
-            className="flex-grow outline-none text-gray-700 placeholder-gray-500 text-sm"
-          />
-          <FaSearch className="ml-2 text-lg text-gray-600" />
-        </div>
-
+        {/* Organizer Event Search Bar */}
+        <OrganizerEventSearch
+          search={search}
+          setSearch={setSearch}
+          filterLevel={filterLevel}
+          setFilterLevel={setFilterLevel}
+          filterFormat={filterFormat}
+          setFilterFormat={setFilterFormat}
+        />
         {/* Add Button */}
         <button
           className="bg-blue-600 text-white text-sm font-medium px-5 py-2 rounded-md hover:bg-blue-700 transition-all shadow-sm whitespace-nowrap cursor-pointer"
@@ -178,15 +195,6 @@ export default function OrganizerDashboard() {
           Add a new event
         </button>
 
-        {/*Refresh  for saftety button*/}
- {/*       <div
-          className="text-4xl text-gray-700 cursor-pointer hover:text-gray-800"
-          onClick={fetchMyEvents}
-          title="Refresh"
-        >
-          &#x21bb; 
-        </div>
-*/}
         {/* Profile Icon */}
         <div className="text-4xl text-gray-700 cursor-pointer hover:text-gray-800">
           <FaUserCircle />
@@ -305,13 +313,12 @@ export default function OrganizerDashboard() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
         {
         
-        myEvents.length === 0 ? (
-
+        filteredMyEvents.length === 0 ? (
           <div className="col-span-full text-center text-gray-500">
-            No events created yet.
+            No events found.
           </div>
         ) : (
-          myEvents.map((event) => (
+          filteredMyEvents.map((event) => (
             <div
               key={event.id}
               className="bg-gray-400 text-white p-6 rounded-xl shadow-md text-center hover:bg-gray-500 cursor-pointer"
