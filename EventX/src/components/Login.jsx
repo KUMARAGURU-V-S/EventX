@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { FaEnvelope, FaFacebook, FaTwitter } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 import {
   signInWithEmailAndPassword,
@@ -30,6 +31,8 @@ export default function Login() {
   const [googleUser, setGoogleUser] = useState(null);
   const [googleUsername, setGoogleUsername] = useState("");
   const [googlePassword, setGooglePassword] = useState("");
+  const [googleRole, setGoogleRole] = useState("SELECT ROLE");
+  const navigate = useNavigate();
 
   // Login with username or email
   const handleLogin = async (e) => {
@@ -39,15 +42,28 @@ export default function Login() {
       if (role === "SELECT ROLE") return alert("Please select a role");
       if (!input) return alert("Enter username or email");
       if (!password || password.length < 6) return alert("Password must be at least 6 characters");
+      let userRole;
       if (!input.includes("@")) {
-        // Treat as username, look up email
         const usernameRef = doc(db, "usernames", input);
         const snap = await getDoc(usernameRef);
         if (!snap.exists()) return alert("Username not found");
         email = snap.data().email;
+        userRole = snap.data().role;
+      } else {
+        const usernameRef = doc(db, "usernames", input);
+        const snap = await getDoc(usernameRef);
+        if (!snap.exists()) return alert("Email not found");
+        userRole = snap.data().role;
       }
+      if (userRole !== role) return alert("Role does not match!");
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       alert(`Welcome ${userCredential.user.email}`);
+      // Redirect based on role
+      if (role === "Organizer") {
+        navigate("/organiser-dashboard");
+      } else if (role === "Student") {
+        navigate("/student-dashboard");
+      }
     } catch (error) {
       alert(error.message);
     }
@@ -61,7 +77,14 @@ export default function Login() {
       if (!input || !input.includes("@")) return alert("Enter a valid email for signup");
       if (!password || password.length < 6) return alert("Password must be at least 6 characters");
       const userCredential = await createUserWithEmailAndPassword(auth, input, password);
+      await setDoc(doc(db, "usernames", input), { email: input, role });
       alert(`Account created for ${userCredential.user.email}`);
+      // Redirect based on role
+      if (role === "Organizer") {
+        navigate("/organiser-dashboard");
+      } else if (role === "Student") {
+        navigate("/student-dashboard");
+      }
     } catch (error) {
       alert(error.message);
     }
@@ -118,10 +141,11 @@ export default function Login() {
     }
   };
 
-  // Username step for Google
+  // Username step for Google (signup or forgot)
   const handleGoogleUsername = async (e) => {
     e.preventDefault();
     if (!googleUsername) return alert("Username required");
+    if (googleRole === "SELECT ROLE") return alert("Please select a role");
 
     // Find the old username for this email
     const usernamesCol = collection(db, "usernames");
@@ -134,28 +158,25 @@ export default function Login() {
       }
     }
 
-    // If in forgot password mode (googleStep===1 and googleUser exists and oldUsernameDoc exists)
     if (oldUsernameDoc) {
       if (oldUsernameDoc.id === googleUsername) {
-        // Same username, just update password in next step
         setGoogleStep(2);
       } else {
-        // New username: check if taken
         const usernameRef = doc(db, "usernames", googleUsername);
         const snap = await getDoc(usernameRef);
         if (snap.exists()) return alert("Username already taken");
-        // Remove old mapping and add new mapping
-        await setDoc(usernameRef, { email: googleUser.email });
-        await setDoc(doc(db, "usernames", oldUsernameDoc.id), {}, { merge: false }); // clear old mapping
-        await setDoc(doc(db, "usernames", oldUsernameDoc.id), { deleted: true }); // mark as deleted
+        // Remove old mapping and add new mapping with role
+        await setDoc(usernameRef, { email: googleUser.email, role: googleRole });
+        await setDoc(doc(db, "usernames", oldUsernameDoc.id), {}, { merge: false });
+        await setDoc(doc(db, "usernames", oldUsernameDoc.id), { deleted: true });
         setGoogleStep(2);
       }
     } else {
-      // For signup flow, or if no old username found (shouldn't happen in forgot)
+      // For signup flow, or if no old username found
       const usernameRef = doc(db, "usernames", googleUsername);
       const snap = await getDoc(usernameRef);
       if (snap.exists()) return alert("Username already taken");
-      await setDoc(usernameRef, { email: googleUser.email });
+      await setDoc(usernameRef, { email: googleUser.email, role: googleRole });
       setGoogleStep(2);
     }
   };
@@ -167,6 +188,12 @@ export default function Login() {
     try {
       await updatePassword(auth.currentUser, googlePassword);
       alert("Google signup complete!");
+      // Redirect based on role
+      if (role === "Organizer") {
+        navigate("/organiser-dashboard");
+      } else if (role === "Student") {
+        navigate("/student-dashboard");
+      }
       setGoogleStep(0);
       setGoogleUser(null);
       setGoogleUsername("");
@@ -193,6 +220,15 @@ export default function Login() {
           {/* Google signup flow */}
           {googleStep === 1 && (
             <form onSubmit={handleGoogleUsername}>
+              <select
+                value={googleRole}
+                onChange={e => setGoogleRole(e.target.value)}
+                className="w-full bg-white/90 text-black px-4 py-2 rounded-md focus:outline-none cursor-pointer font-bold mb-2"
+              >
+                <option>SELECT ROLE</option>
+                <option>Organizer</option>
+                <option>Student</option>
+              </select>
               <input
                 value={googleUsername}
                 onChange={e => setGoogleUsername(e.target.value)}
